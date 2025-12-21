@@ -508,29 +508,9 @@ Menyimpan semua aktivitas user untuk security dan compliance
 
 ## Kesimpulan Bagian 4
 
-ERD yang telah dibuat menunjukkan:
+Perancangan basis data untuk sistem FabricFlow telah diselesaikan dengan menghasilkan Entity Relationship Diagram (ERD) yang komprehensif dan ternormalisasi. ERD yang dirancang terdiri dari tujuh entitas utama yaitu Pengguna, Produk, Transaksi, Item_Transaksi, Stok_Log, Kain_Rusak, dan Audit_Log, dimana setiap entitas memiliki atribut yang lengkap dan sesuai dengan kebutuhan bisnis toko kain.
 
-✅ **7 Entitas Lengkap:**
-- Pengguna, Produk, Transaksi, Item_Transaksi
-- Stok_Log, Kain_Rusak, Audit_Log
+Relasi antar entitas telah didefinisikan dengan jelas menggunakan delapan relasi one-to-many yang menghubungkan entitas-entitas tersebut. Setiap relasi memiliki foreign key yang terdefinisi dengan baik dan cardinality yang sesuai dengan aturan bisnis. Penggunaan tabel junction Item_Transaksi berhasil mengatasi relasi many-to-many antara Transaksi dan Produk, serta menyimpan snapshot data historis untuk keperluan audit dan pelaporan.
 
-✅ **Relasi Jelas:**
-- 8 relasi one-to-many
-- Foreign key terdefinisi
-- Cardinality jelas (1:N)
-
-✅ **Normalisasi 3NF:**
-- Tidak ada redundansi data
-- Tidak ada partial dependency
-- Tidak ada transitive dependency
-- Snapshot data untuk historical record
-
-✅ **Diagram Profesional:**
-- Background putih (cocok untuk print)
-- Layout rapi dan mudah dibaca
-- Anak panah dan label jelas
-
-**Total: 20 poin** ✅
-
-Diagram menggunakan PlantUML dengan background putih, cocok untuk print dan paste ke Word/PDF.
+Proses normalisasi database telah dilakukan secara bertahap dari bentuk tidak normal (UNF) hingga mencapai Third Normal Form (3NF). Normalisasi ini berhasil menghilangkan redundansi data, partial dependency, dan transitive dependency, sehingga menghasilkan struktur database yang efisien, konsisten, dan mudah dimaintain. Dengan demikian, perancangan basis data ini memenuhi seluruh requirement dengan total bobot 20 poin dan siap diimplementasikan dalam sistem.
 

@@ -600,36 +600,11 @@ deactivate ui
 
 ## Kesimpulan Bagian 5
 
-Bagian 5 telah menyelesaikan seluruh requirement UML diagram:
+Perancangan UML (Unified Modeling Language) untuk sistem FabricFlow telah diselesaikan secara menyeluruh dengan empat jenis diagram yang saling melengkapi. Use Case Diagram berhasil mengidentifikasi dua belas use case yang mencakup seluruh fungsionalitas sistem, dengan pembagian akses yang jelas antara aktor Admin dan Kasir, serta relasi include dan extend yang menunjukkan ketergantungan antar use case.
 
-✅ **A. Use Case Diagram (10 poin)**
-- 12 use cases lengkap
-- 2 aktor (Admin & Kasir)
-- Relasi include & extend
+Activity Diagram menggambarkan alur proses transaksi POS secara detail dari awal hingga akhir, termasuk decision points untuk validasi stok dan keranjang kosong, serta parallel activities untuk proses penyimpanan data yang efisien. Diagram ini memberikan pemahaman yang jelas tentang bagaimana proses bisnis utama sistem berjalan dalam praktiknya.
 
-✅ **B. Activity Diagram (10 poin)**
-- Alur proses transaksi POS lengkap
-- Decision points dan parallel activities
-- Loop untuk tambah produk
+Class Diagram menunjukkan struktur arsitektur sistem dengan tujuh class utama yang terdiri dari empat entity class (Pengguna, Produk, Transaksi, ItemTransaksi) dan tiga store class (AuthStore, ProdukStore, TransaksiStore) yang mengimplementasikan pattern state management Zustand. Relasi antar class terdefinisi dengan jelas menggunakan composition, association, dan dependency yang sesuai dengan prinsip object-oriented design.
 
-✅ **C. Class Diagram (10 poin)**
-- 7 class (4 entity + 3 store)
-- Atribut dan method dari code asli
-- Relasi composition, association, dependency
-
-✅ **D. Sequence Diagram (10 poin)**
-- 6 fase proses transaksi
-- Interaksi antar objek detail
-- Message passing lengkap
-
-**Total: 40 poin** ✅
-
-Semua diagram menggunakan PlantUML dengan background putih, cocok untuk print dan paste ke Word/PDF.
-
-**File Implementasi:**
-- `authStore.js` - AuthStore
-- `produkStore.js` - ProdukStore
-- `transaksiStore.js` - TransaksiStore
-- `Kasir.jsx` - UI Component
-- `helper.js` - Utility functions
+Sequence Diagram melengkapi dokumentasi dengan menggambarkan interaksi antar objek dalam enam fase proses transaksi, mulai dari inisialisasi, pemilihan produk, konfigurasi transaksi, pemrosesan, update stok, hingga finalisasi. Diagram ini menunjukkan message passing yang detail dan lifecycle objek yang membantu pemahaman tentang bagaimana komponen-komponen sistem berkomunikasi satu sama lain. Dengan demikian, perancangan UML ini memenuhi seluruh requirement dengan total bobot 40 poin dan memberikan dokumentasi yang komprehensif untuk tahap implementasi sistem.
 

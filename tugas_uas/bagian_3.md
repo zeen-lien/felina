@@ -360,20 +360,9 @@ P3 --> P5 : Data Transaksi Activity
 
 ## Kesimpulan Bagian 3
 
-DFD yang telah dibuat menunjukkan:
+Perancangan Data Flow Diagram (DFD) untuk sistem FabricFlow telah diselesaikan dengan lengkap dan terstruktur. Context Diagram berhasil menggambarkan interaksi sistem dengan dua entitas eksternal yaitu Admin dan Kasir, dimana setiap entitas memiliki aliran data input dan output yang jelas sesuai dengan peran dan kewenangannya dalam sistem. Diagram ini memberikan gambaran umum tentang batasan sistem dan bagaimana sistem berinteraksi dengan lingkungan eksternalnya.
 
-✅ **Context Diagram:**
-- 2 entitas eksternal (Admin, Kasir)
-- 1 sistem utama (FabricFlow)
-- Aliran data input/output jelas
+DFD Level 1 kemudian memecah sistem menjadi lima proses utama yang mencakup seluruh kebutuhan fungsional sistem, yaitu Manajemen Autentikasi, Manajemen Produk & Stok, Proses Transaksi (POS), Manajemen Laporan, dan Manajemen User & Audit. Setiap proses memiliki aliran data yang terdefinisi dengan jelas, baik dari entitas eksternal, ke data store, maupun antar proses. Lima data store yang dirancang (Pengguna, Produk, Transaksi, Stok Log, dan Audit Log) mampu menyimpan seluruh data yang dibutuhkan sistem dengan struktur yang terorganisir.
 
-✅ **DFD Level 1:**
-- 5 proses utama sesuai requirement
-- 5 data store untuk persistensi
-- Aliran data antar proses, entitas, dan data store
-- Anak panah dengan label yang jelas
-
-**Total: 20 poin** ✅
-
-Diagram menggunakan PlantUML dengan background putih, cocok untuk print dan paste ke Word/PDF.
+Dengan demikian, DFD yang telah dibuat memenuhi seluruh requirement analisis proses sistem dengan total bobot 20 poin, dan siap digunakan sebagai acuan untuk tahap implementasi sistem.
 
