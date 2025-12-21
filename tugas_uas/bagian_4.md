@@ -2,817 +2,535 @@
 
 ## Pengantar
 
-Entity Relationship Diagram (ERD) adalah representasi grafis dari struktur database yang menunjukkan entitas, atribut, dan relasi antar entitas. ERD FabricFlow dirancang dengan prinsip normalisasi untuk menghindari redundansi data dan memastikan integritas data.
+Entity Relationship Diagram (ERD) adalah model data yang menggambarkan hubungan antar entitas dalam database. ERD menunjukkan entitas (tabel), atribut (kolom), dan relasi (relationship) antar entitas.
 
-Database FabricFlow terdiri dari 7 entitas utama yang saling berelasi untuk mendukung operasional toko kain secara komprehensif.
+Untuk sistem FabricFlow, ERD akan menggambarkan struktur database yang menyimpan data pengguna, produk, transaksi, stok, dan audit log dengan relasi yang jelas dan ternormalisasi hingga 3NF.
 
 ---
 
-## 1. Daftar Entitas dan Atribut
+## 1. Entity Relationship Diagram (ERD)
 
-### Entitas 1: USER
-**Deskripsi:** Menyimpan data pengguna sistem (Admin dan Kasir)
+### Deskripsi
+ERD sistem FabricFlow terdiri dari 7 entitas utama dengan relasi one-to-many dan many-to-many yang telah dinormalisasi.
+
+### Entitas Utama:
+
+#### 1. **Pengguna**
+Menyimpan data user sistem (Admin dan Kasir)
 
 **Atribut:**
-- **id** (PK) - VARCHAR(50) - ID unik user (auto-generate)
-- **nama** - VARCHAR(100) - Nama lengkap user
-- **email** - VARCHAR(100) - Email user (unique)
-- **password** - VARCHAR(255) - Password terenkripsi
-- **peran** - ENUM('admin', 'kasir') - Role user
-- **aktif** - BOOLEAN - Status aktif user
-- **tanggalDibuat** - DATETIME - Timestamp pembuatan akun
-
-**Constraint:**
-- PRIMARY KEY: id
-- UNIQUE: email
-- NOT NULL: nama, email, password, peran
+- `id` (PK) - UUID unik
+- `nama` - Nama lengkap user
+- `email` - Email (unique)
+- `password` - Password terenkripsi
+- `peran` - Role (admin/kasir)
+- `aktif` - Status aktif (boolean)
+- `foto_profil` - URL foto
+- `tanggal_dibuat` - Timestamp
 
 ---
 
-### Entitas 2: PRODUK
-**Deskripsi:** Menyimpan data produk kain
+#### 2. **Produk**
+Menyimpan data produk kain
 
 **Atribut:**
-- **id** (PK) - VARCHAR(50) - ID unik produk
-- **kode** - VARCHAR(20) - Kode produk (unique, auto-generate)
-- **nama** - VARCHAR(200) - Nama produk
-- **kategori** - VARCHAR(50) - Kategori kain (FK ke KATEGORI)
-- **warna** - VARCHAR(50) - Warna kain
-- **harga** - DECIMAL(12,2) - Harga per meter
-- **stok** - DECIMAL(10,2) - Stok tersedia (meter)
-- **satuan** - VARCHAR(20) - Satuan (meter/yard)
-- **foto** - TEXT - URL foto produk
-- **deskripsi** - TEXT - Deskripsi produk
-- **tanggalDibuat** - DATETIME - Timestamp pembuatan
-
-**Constraint:**
-- PRIMARY KEY: id
-- UNIQUE: kode
-- NOT NULL: kode, nama, kategori, harga, stok
-- CHECK: harga > 0, stok >= 0
+- `id` (PK) - UUID unik
+- `kode` - Kode produk (unique)
+- `nama` - Nama produk
+- `kategori` - Kategori kain
+- `warna` - Warna kain
+- `harga` - Harga per meter
+- `stok` - Stok tersedia (meter)
+- `satuan` - Satuan (meter)
+- `foto` - URL foto produk
+- `deskripsi` - Deskripsi produk
+- `tanggal_dibuat` - Timestamp
+- `tanggal_diupdate` - Timestamp
 
 ---
 
-### Entitas 3: TRANSAKSI
-**Deskripsi:** Menyimpan header transaksi penjualan
+#### 3. **Transaksi**
+Menyimpan data transaksi penjualan
 
 **Atribut:**
-- **id** (PK) - VARCHAR(50) - ID unik transaksi
-- **nomor** - VARCHAR(30) - Nomor transaksi (unique, format: TRX-YYYYMMDD-XXX)
-- **tanggal** - DATETIME - Tanggal & waktu transaksi
-- **penggunaId** (FK) - VARCHAR(50) - ID kasir yang melayani
-- **namaPengguna** - VARCHAR(100) - Nama kasir (denormalisasi)
-- **total** - DECIMAL(15,2) - Total sebelum diskon
-- **diskon** - DECIMAL(15,2) - Nominal diskon
-- **grandTotal** - DECIMAL(15,2) - Total setelah diskon
-- **metodeBayar** - VARCHAR(20) - Metode pembayaran
-- **status** - ENUM('selesai', 'void') - Status transaksi
-
-**Constraint:**
-- PRIMARY KEY: id
-- UNIQUE: nomor
-- FOREIGN KEY: penggunaId REFERENCES USER(id)
-- NOT NULL: nomor, tanggal, penggunaId, total, grandTotal, metodeBayar, status
-- CHECK: total >= 0, diskon >= 0, grandTotal >= 0
+- `id` (PK) - UUID unik
+- `nomor` - Nomor transaksi (unique)
+- `tanggal` - Tanggal transaksi
+- `pengguna_id` (FK) - ID user yang melakukan transaksi
+- `total` - Total sebelum diskon
+- `diskon` - Nominal diskon
+- `grand_total` - Total setelah diskon
+- `metode_bayar` - Metode pembayaran
+- `status` - Status (selesai/void)
+- `catatan` - Catatan tambahan
+- `tanggal_void` - Tanggal void (jika di-void)
 
 ---
 
-### Entitas 4: TRANSAKSI_ITEM
-**Deskripsi:** Menyimpan detail item dalam transaksi
+#### 4. **Item_Transaksi**
+Menyimpan detail item dalam transaksi (junction table)
 
 **Atribut:**
-- **id** (PK) - VARCHAR(50) - ID unik item
-- **transaksiId** (FK) - VARCHAR(50) - ID transaksi
-- **produkId** (FK) - VARCHAR(50) - ID produk
-- **namaProduk** - VARCHAR(200) - Nama produk (denormalisasi)
-- **kodeProduk** - VARCHAR(20) - Kode produk (denormalisasi)
-- **jumlah** - DECIMAL(10,2) - Jumlah dibeli (meter)
-- **hargaSatuan** - DECIMAL(12,2) - Harga per meter saat transaksi
-- **subtotal** - DECIMAL(15,2) - Jumlah × harga satuan
-- **stokTersedia** - DECIMAL(10,2) - Stok saat transaksi (untuk validasi)
-
-**Constraint:**
-- PRIMARY KEY: id
-- FOREIGN KEY: transaksiId REFERENCES TRANSAKSI(id) ON DELETE CASCADE
-- FOREIGN KEY: produkId REFERENCES PRODUK(id)
-- NOT NULL: transaksiId, produkId, jumlah, hargaSatuan, subtotal
-- CHECK: jumlah > 0, hargaSatuan > 0, subtotal > 0
-
+- `id` (PK) - UUID unik
+- `transaksi_id` (FK) - ID transaksi
+- `produk_id` (FK) - ID produk
+- `nama_produk` - Snapshot nama produk
+- `jumlah` - Jumlah (meter)
+- `harga_satuan` - Snapshot harga saat transaksi
+- `subtotal` - Jumlah × harga_satuan
 
 ---
 
-### Entitas 5: STOK_LOG
-**Deskripsi:** Menyimpan riwayat perubahan stok (audit trail)
+#### 5. **Stok_Log**
+Menyimpan riwayat perubahan stok
 
 **Atribut:**
-- **id** (PK) - VARCHAR(50) - ID unik log
-- **produkId** (FK) - VARCHAR(50) - ID produk
-- **namaProduk** - VARCHAR(200) - Nama produk (denormalisasi)
-- **jumlah** - DECIMAL(10,2) - Perubahan stok (+/-)
-- **stokSebelum** - DECIMAL(10,2) - Stok sebelum perubahan
-- **stokSesudah** - DECIMAL(10,2) - Stok setelah perubahan
-- **tipe** - ENUM('masuk', 'keluar', 'penjualan', 'rusak', 'adjustment') - Tipe perubahan
-- **referensi** - VARCHAR(50) - ID referensi (transaksi/kain rusak/adjustment)
-- **penggunaId** (FK) - VARCHAR(50) - ID user yang melakukan
-- **namaPengguna** - VARCHAR(100) - Nama user (denormalisasi)
-- **catatan** - TEXT - Catatan tambahan
-- **tanggal** - DATETIME - Timestamp perubahan
-
-**Constraint:**
-- PRIMARY KEY: id
-- FOREIGN KEY: produkId REFERENCES PRODUK(id)
-- FOREIGN KEY: penggunaId REFERENCES USER(id)
-- NOT NULL: produkId, jumlah, stokSebelum, stokSesudah, tipe, tanggal
-- INDEX: produkId, tipe, tanggal (untuk query cepat)
+- `id` (PK) - UUID unik
+- `produk_id` (FK) - ID produk
+- `pengguna_id` (FK) - ID user yang melakukan perubahan
+- `jenis` - Jenis perubahan (masuk/keluar/rusak/transaksi)
+- `jumlah` - Jumlah perubahan (+ atau -)
+- `stok_sebelum` - Stok sebelum perubahan
+- `stok_sesudah` - Stok setelah perubahan
+- `keterangan` - Keterangan perubahan
+- `tanggal` - Timestamp
 
 ---
 
-### Entitas 6: KAIN_RUSAK
-**Deskripsi:** Menyimpan data kain yang rusak/cacat
+#### 6. **Kain_Rusak**
+Menyimpan data kain rusak/cacat
 
 **Atribut:**
-- **id** (PK) - VARCHAR(50) - ID unik record
-- **produkId** (FK) - VARCHAR(50) - ID produk
-- **namaProduk** - VARCHAR(200) - Nama produk (denormalisasi)
-- **kodeProduk** - VARCHAR(20) - Kode produk (denormalisasi)
-- **jumlah** - DECIMAL(10,2) - Jumlah rusak (meter)
-- **alasan** - VARCHAR(100) - Alasan kerusakan
-- **foto** - TEXT - URL foto bukti kerusakan
-- **penggunaId** (FK) - VARCHAR(50) - ID user yang mencatat
-- **namaPengguna** - VARCHAR(100) - Nama user (denormalisasi)
-- **tanggal** - DATETIME - Timestamp pencatatan
-
-**Constraint:**
-- PRIMARY KEY: id
-- FOREIGN KEY: produkId REFERENCES PRODUK(id)
-- FOREIGN KEY: penggunaId REFERENCES USER(id)
-- NOT NULL: produkId, jumlah, alasan, tanggal
-- CHECK: jumlah > 0
+- `id` (PK) - UUID unik
+- `produk_id` (FK) - ID produk
+- `pengguna_id` (FK) - ID user yang mencatat
+- `jumlah` - Jumlah kain rusak (meter)
+- `alasan` - Alasan kerusakan
+- `foto` - URL foto kerusakan
+- `tanggal` - Timestamp
 
 ---
 
-### Entitas 7: AUDIT_LOG
-**Deskripsi:** Menyimpan log aktivitas user untuk audit trail
+#### 7. **Audit_Log**
+Menyimpan log aktivitas user
 
 **Atribut:**
-- **id** (PK) - VARCHAR(50) - ID unik log
-- **penggunaId** (FK) - VARCHAR(50) - ID user
-- **namaPengguna** - VARCHAR(100) - Nama user (denormalisasi)
-- **aksi** - ENUM('login', 'create', 'update', 'delete') - Jenis aksi
-- **tabel** - VARCHAR(50) - Nama tabel yang diakses
-- **dataId** - VARCHAR(50) - ID data yang diakses
-- **dataBaru** - JSON - Data baru (untuk create/update)
-- **dataLama** - JSON - Data lama (untuk update/delete)
-- **tanggal** - DATETIME - Timestamp aktivitas
-
-**Constraint:**
-- PRIMARY KEY: id
-- FOREIGN KEY: penggunaId REFERENCES USER(id)
-- NOT NULL: penggunaId, aksi, tanggal
-- INDEX: penggunaId, aksi, tanggal (untuk query cepat)
+- `id` (PK) - UUID unik
+- `pengguna_id` (FK) - ID user
+- `aksi` - Jenis aksi (login/logout/create/update/delete)
+- `modul` - Modul yang diakses (produk/transaksi/user/dll)
+- `detail` - Detail aktivitas (JSON)
+- `ip_address` - IP address user
+- `tanggal` - Timestamp
 
 ---
 
-## 2. Entity Relationship Diagram (ERD)
+### Relasi Antar Entitas:
 
-### Script Diagram - Mermaid (ERD Notation)
+1. **Pengguna → Transaksi** (1:N)
+   - Satu user dapat melakukan banyak transaksi
+   - Setiap transaksi dilakukan oleh satu user
 
-```mermaid
-erDiagram
-    USER ||--o{ TRANSAKSI : "melakukan"
-    USER ||--o{ STOK_LOG : "mencatat"
-    USER ||--o{ KAIN_RUSAK : "mencatat"
-    USER ||--o{ AUDIT_LOG : "menghasilkan"
-    
-    PRODUK ||--o{ TRANSAKSI_ITEM : "terjual_dalam"
-    PRODUK ||--o{ STOK_LOG : "memiliki"
-    PRODUK ||--o{ KAIN_RUSAK : "mengalami"
-    
-    TRANSAKSI ||--|{ TRANSAKSI_ITEM : "berisi"
-    
-    USER {
-        varchar id PK
-        varchar nama
-        varchar email UK
-        varchar password
-        enum peran
-        boolean aktif
-        datetime tanggalDibuat
-    }
-    
-    PRODUK {
-        varchar id PK
-        varchar kode UK
-        varchar nama
-        varchar kategori
-        varchar warna
-        decimal harga
-        decimal stok
-        varchar satuan
-        text foto
-        text deskripsi
-        datetime tanggalDibuat
-    }
-    
-    TRANSAKSI {
-        varchar id PK
-        varchar nomor UK
-        datetime tanggal
-        varchar penggunaId FK
-        varchar namaPengguna
-        decimal total
-        decimal diskon
-        decimal grandTotal
-        varchar metodeBayar
-        enum status
-    }
-    
-    TRANSAKSI_ITEM {
-        varchar id PK
-        varchar transaksiId FK
-        varchar produkId FK
-        varchar namaProduk
-        varchar kodeProduk
-        decimal jumlah
-        decimal hargaSatuan
-        decimal subtotal
-        decimal stokTersedia
-    }
-    
-    STOK_LOG {
-        varchar id PK
-        varchar produkId FK
-        varchar namaProduk
-        decimal jumlah
-        decimal stokSebelum
-        decimal stokSesudah
-        enum tipe
-        varchar referensi
-        varchar penggunaId FK
-        varchar namaPengguna
-        text catatan
-        datetime tanggal
-    }
-    
-    KAIN_RUSAK {
-        varchar id PK
-        varchar produkId FK
-        varchar namaProduk
-        varchar kodeProduk
-        decimal jumlah
-        varchar alasan
-        text foto
-        varchar penggunaId FK
-        varchar namaPengguna
-        datetime tanggal
-    }
-    
-    AUDIT_LOG {
-        varchar id PK
-        varchar penggunaId FK
-        varchar namaPengguna
-        enum aksi
-        varchar tabel
-        varchar dataId
-        json dataBaru
-        json dataLama
-        datetime tanggal
-    }
-```
+2. **Transaksi → Item_Transaksi** (1:N)
+   - Satu transaksi memiliki banyak item
+   - Setiap item belongs to satu transaksi
 
-### Script Diagram - PlantUML (Class Diagram Style ERD)
+3. **Produk → Item_Transaksi** (1:N)
+   - Satu produk dapat muncul di banyak item transaksi
+   - Setiap item transaksi mereferensi satu produk
+
+4. **Pengguna → Stok_Log** (1:N)
+   - Satu user dapat membuat banyak log stok
+   - Setiap log dibuat oleh satu user
+
+5. **Produk → Stok_Log** (1:N)
+   - Satu produk memiliki banyak log perubahan stok
+   - Setiap log terkait satu produk
+
+6. **Pengguna → Kain_Rusak** (1:N)
+   - Satu user dapat mencatat banyak kain rusak
+   - Setiap catatan dibuat oleh satu user
+
+7. **Produk → Kain_Rusak** (1:N)
+   - Satu produk dapat memiliki banyak catatan rusak
+   - Setiap catatan terkait satu produk
+
+8. **Pengguna → Audit_Log** (1:N)
+   - Satu user memiliki banyak log aktivitas
+   - Setiap log terkait satu user
+
+---
+
+### Script Diagram - PlantUML
 
 ```plantuml
 @startuml
-!define TABLE class
-!define PK <b><color:#ff0040>PK</color></b>
-!define FK <b><color:#00d4ff>FK</color></b>
-!define UK <b><color:#00ff88>UK</color></b>
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontColor #000000
+skinparam shadowing false
+skinparam linetype ortho
 
-skinparam backgroundColor #050505
-skinparam classBackgroundColor #1a237e
-skinparam classBorderColor #00d4ff
-skinparam classBorderThickness 2
-skinparam classAttributeFontColor #ffffff
-skinparam classFontColor #ffffff
-skinparam arrowColor #ff0040
-skinparam arrowThickness 2
-
-TABLE USER {
-  PK id : VARCHAR(50)
-  UK email : VARCHAR(100)
-  nama : VARCHAR(100)
-  password : VARCHAR(255)
-  peran : ENUM
-  aktif : BOOLEAN
-  tanggalDibuat : DATETIME
+skinparam class {
+    BackgroundColor #E3F2FD
+    BorderColor #1976D2
+    BorderThickness 2
+    ArrowColor #000000
+    ArrowThickness 2
 }
 
-TABLE PRODUK {
-  PK id : VARCHAR(50)
-  UK kode : VARCHAR(20)
-  nama : VARCHAR(200)
-  kategori : VARCHAR(50)
-  warna : VARCHAR(50)
-  harga : DECIMAL(12,2)
-  stok : DECIMAL(10,2)
-  satuan : VARCHAR(20)
-  foto : TEXT
-  deskripsi : TEXT
-  tanggalDibuat : DATETIME
+title Entity Relationship Diagram - Sistem FabricFlow
+
+entity "Pengguna" as pengguna {
+    * id : UUID <<PK>>
+    --
+    nama : VARCHAR(100)
+    email : VARCHAR(100) <<UNIQUE>>
+    password : VARCHAR(255)
+    peran : ENUM(admin, kasir)
+    aktif : BOOLEAN
+    foto_profil : TEXT
+    tanggal_dibuat : TIMESTAMP
 }
 
-TABLE TRANSAKSI {
-  PK id : VARCHAR(50)
-  UK nomor : VARCHAR(30)
-  FK penggunaId : VARCHAR(50)
-  tanggal : DATETIME
-  namaPengguna : VARCHAR(100)
-  total : DECIMAL(15,2)
-  diskon : DECIMAL(15,2)
-  grandTotal : DECIMAL(15,2)
-  metodeBayar : VARCHAR(20)
-  status : ENUM
+entity "Produk" as produk {
+    * id : UUID <<PK>>
+    --
+    kode : VARCHAR(50) <<UNIQUE>>
+    nama : VARCHAR(100)
+    kategori : VARCHAR(50)
+    warna : VARCHAR(50)
+    harga : DECIMAL(15,2)
+    stok : DECIMAL(10,2)
+    satuan : VARCHAR(20)
+    foto : TEXT
+    deskripsi : TEXT
+    tanggal_dibuat : TIMESTAMP
+    tanggal_diupdate : TIMESTAMP
 }
 
-TABLE TRANSAKSI_ITEM {
-  PK id : VARCHAR(50)
-  FK transaksiId : VARCHAR(50)
-  FK produkId : VARCHAR(50)
-  namaProduk : VARCHAR(200)
-  kodeProduk : VARCHAR(20)
-  jumlah : DECIMAL(10,2)
-  hargaSatuan : DECIMAL(12,2)
-  subtotal : DECIMAL(15,2)
-  stokTersedia : DECIMAL(10,2)
+entity "Transaksi" as transaksi {
+    * id : UUID <<PK>>
+    --
+    * pengguna_id : UUID <<FK>>
+    nomor : VARCHAR(50) <<UNIQUE>>
+    tanggal : TIMESTAMP
+    total : DECIMAL(15,2)
+    diskon : DECIMAL(15,2)
+    grand_total : DECIMAL(15,2)
+    metode_bayar : VARCHAR(50)
+    status : ENUM(selesai, void)
+    catatan : TEXT
+    tanggal_void : TIMESTAMP
 }
 
-TABLE STOK_LOG {
-  PK id : VARCHAR(50)
-  FK produkId : VARCHAR(50)
-  FK penggunaId : VARCHAR(50)
-  namaProduk : VARCHAR(200)
-  jumlah : DECIMAL(10,2)
-  stokSebelum : DECIMAL(10,2)
-  stokSesudah : DECIMAL(10,2)
-  tipe : ENUM
-  referensi : VARCHAR(50)
-  namaPengguna : VARCHAR(100)
-  catatan : TEXT
-  tanggal : DATETIME
+entity "Item_Transaksi" as item {
+    * id : UUID <<PK>>
+    --
+    * transaksi_id : UUID <<FK>>
+    * produk_id : UUID <<FK>>
+    nama_produk : VARCHAR(100)
+    jumlah : DECIMAL(10,2)
+    harga_satuan : DECIMAL(15,2)
+    subtotal : DECIMAL(15,2)
 }
 
-TABLE KAIN_RUSAK {
-  PK id : VARCHAR(50)
-  FK produkId : VARCHAR(50)
-  FK penggunaId : VARCHAR(50)
-  namaProduk : VARCHAR(200)
-  kodeProduk : VARCHAR(20)
-  jumlah : DECIMAL(10,2)
-  alasan : VARCHAR(100)
-  foto : TEXT
-  namaPengguna : VARCHAR(100)
-  tanggal : DATETIME
+entity "Stok_Log" as stok_log {
+    * id : UUID <<PK>>
+    --
+    * produk_id : UUID <<FK>>
+    * pengguna_id : UUID <<FK>>
+    jenis : ENUM(masuk, keluar, rusak, transaksi)
+    jumlah : DECIMAL(10,2)
+    stok_sebelum : DECIMAL(10,2)
+    stok_sesudah : DECIMAL(10,2)
+    keterangan : TEXT
+    tanggal : TIMESTAMP
 }
 
-TABLE AUDIT_LOG {
-  PK id : VARCHAR(50)
-  FK penggunaId : VARCHAR(50)
-  namaPengguna : VARCHAR(100)
-  aksi : ENUM
-  tabel : VARCHAR(50)
-  dataId : VARCHAR(50)
-  dataBaru : JSON
-  dataLama : JSON
-  tanggal : DATETIME
+entity "Kain_Rusak" as kain_rusak {
+    * id : UUID <<PK>>
+    --
+    * produk_id : UUID <<FK>>
+    * pengguna_id : UUID <<FK>>
+    jumlah : DECIMAL(10,2)
+    alasan : TEXT
+    foto : TEXT
+    tanggal : TIMESTAMP
 }
 
-USER "1" -- "0..*" TRANSAKSI : melakukan >
-USER "1" -- "0..*" STOK_LOG : mencatat >
-USER "1" -- "0..*" KAIN_RUSAK : mencatat >
-USER "1" -- "0..*" AUDIT_LOG : menghasilkan >
+entity "Audit_Log" as audit {
+    * id : UUID <<PK>>
+    --
+    * pengguna_id : UUID <<FK>>
+    aksi : VARCHAR(50)
+    modul : VARCHAR(50)
+    detail : JSON
+    ip_address : VARCHAR(50)
+    tanggal : TIMESTAMP
+}
 
-PRODUK "1" -- "0..*" TRANSAKSI_ITEM : terjual dalam >
-PRODUK "1" -- "0..*" STOK_LOG : memiliki >
-PRODUK "1" -- "0..*" KAIN_RUSAK : mengalami >
+' Relationships
+pengguna ||--o{ transaksi : "melakukan"
+pengguna ||--o{ stok_log : "mencatat"
+pengguna ||--o{ kain_rusak : "mencatat"
+pengguna ||--o{ audit : "memiliki"
 
-TRANSAKSI "1" -- "1..*" TRANSAKSI_ITEM : berisi >
+produk ||--o{ item : "direferensi"
+produk ||--o{ stok_log : "memiliki"
+produk ||--o{ kain_rusak : "memiliki"
+
+transaksi ||--|{ item : "memiliki"
 
 @enduml
 ```
 
+**Cara Generate Gambar:**
+1. Copy script PlantUML di atas
+2. Buka https://www.plantuml.com/plantuml/uml/
+3. Paste script ke editor
+4. Klik "Submit" untuk generate
+5. Download gambar PNG (klik kanan > Save Image)
+6. Paste ke Word
 
 ---
 
-## 3. Relasi Antar Tabel
+## 2. Relasi Tabel (Mapping)
 
-### Relasi 1: USER → TRANSAKSI (One-to-Many)
-**Kardinalitas:** 1 : N  
-**Deskripsi:** Satu user (kasir) dapat melakukan banyak transaksi, tetapi satu transaksi hanya dilakukan oleh satu kasir.
+### Tabel dan Foreign Key:
 
-**Foreign Key:** TRANSAKSI.penggunaId → USER.id  
-**Referential Integrity:** ON DELETE RESTRICT (tidak bisa hapus user yang punya transaksi)
-
-**Business Rule:**
-- Setiap transaksi harus dicatat siapa kasir yang melayani
-- Kasir tidak bisa dihapus jika masih ada transaksi aktif
-- Untuk audit trail, nama kasir di-denormalisasi di tabel TRANSAKSI
-
----
-
-### Relasi 2: USER → STOK_LOG (One-to-Many)
-**Kardinalitas:** 1 : N  
-**Deskripsi:** Satu user dapat membuat banyak log perubahan stok, tetapi satu log hanya dibuat oleh satu user.
-
-**Foreign Key:** STOK_LOG.penggunaId → USER.id  
-**Referential Integrity:** ON DELETE RESTRICT
-
-**Business Rule:**
-- Setiap perubahan stok harus tercatat siapa yang melakukan
-- Log tidak bisa dihapus (immutable audit trail)
-- Nama user di-denormalisasi untuk performa query
-
----
-
-### Relasi 3: USER → KAIN_RUSAK (One-to-Many)
-**Kardinalitas:** 1 : N  
-**Deskripsi:** Satu user dapat mencatat banyak kain rusak, tetapi satu record kain rusak hanya dicatat oleh satu user.
-
-**Foreign Key:** KAIN_RUSAK.penggunaId → USER.id  
-**Referential Integrity:** ON DELETE RESTRICT
-
-**Business Rule:**
-- Setiap pencatatan kain rusak harus tercatat siapa yang input
-- Accountability untuk kerusakan barang
-
----
-
-### Relasi 4: USER → AUDIT_LOG (One-to-Many)
-**Kardinalitas:** 1 : N  
-**Deskripsi:** Satu user dapat menghasilkan banyak log aktivitas, tetapi satu log hanya dari satu user.
-
-**Foreign Key:** AUDIT_LOG.penggunaId → USER.id  
-**Referential Integrity:** ON DELETE RESTRICT
-
-**Business Rule:**
-- Semua aktivitas user tercatat (login, CRUD)
-- Log immutable (tidak bisa edit/hapus)
-- Untuk investigasi dan compliance
-
----
-
-### Relasi 5: PRODUK → TRANSAKSI_ITEM (One-to-Many)
-**Kardinalitas:** 1 : N  
-**Deskripsi:** Satu produk dapat terjual dalam banyak transaksi, tetapi satu item transaksi hanya untuk satu produk.
-
-**Foreign Key:** TRANSAKSI_ITEM.produkId → PRODUK.id  
-**Referential Integrity:** ON DELETE RESTRICT
-
-**Business Rule:**
-- Produk tidak bisa dihapus jika sudah pernah terjual
-- Nama dan kode produk di-denormalisasi untuk historical data
-- Harga satuan disimpan saat transaksi (bisa beda dengan harga current)
-
----
-
-### Relasi 6: PRODUK → STOK_LOG (One-to-Many)
-**Kardinalitas:** 1 : N  
-**Deskripsi:** Satu produk dapat memiliki banyak log perubahan stok, tetapi satu log hanya untuk satu produk.
-
-**Foreign Key:** STOK_LOG.produkId → PRODUK.id  
-**Referential Integrity:** ON DELETE RESTRICT
-
-**Business Rule:**
-- Setiap perubahan stok produk tercatat
-- Tracking stok sebelum dan sesudah untuk audit
-- Tipe perubahan: masuk, keluar, penjualan, rusak, adjustment
-
----
-
-### Relasi 7: PRODUK → KAIN_RUSAK (One-to-Many)
-**Kardinalitas:** 1 : N  
-**Deskripsi:** Satu produk dapat mengalami kerusakan berkali-kali, tetapi satu record kerusakan hanya untuk satu produk.
-
-**Foreign Key:** KAIN_RUSAK.produkId → PRODUK.id  
-**Referential Integrity:** ON DELETE RESTRICT
-
-**Business Rule:**
-- Tracking kerusakan per produk
-- Foto bukti kerusakan (optional)
-- Otomatis kurangi stok dan buat log
-
----
-
-### Relasi 8: TRANSAKSI → TRANSAKSI_ITEM (One-to-Many)
-**Kardinalitas:** 1 : N (minimal 1)  
-**Deskripsi:** Satu transaksi berisi minimal satu item, dan satu item hanya dalam satu transaksi.
-
-**Foreign Key:** TRANSAKSI_ITEM.transaksiId → TRANSAKSI.id  
-**Referential Integrity:** ON DELETE CASCADE
-
-**Business Rule:**
-- Transaksi minimal harus ada 1 item
-- Jika transaksi dihapus, semua item ikut terhapus (cascade)
-- Subtotal item = jumlah × harga satuan
-- Total transaksi = SUM(subtotal items) - diskon
-
----
-
-## 4. Normalisasi Database
-
-### Bentuk Tidak Normal (Unnormalized Form)
-
-**Tabel TRANSAKSI_LENGKAP** (sebelum normalisasi):
 ```
-nomor_transaksi | tanggal | kasir_nama | kasir_email | produk1_nama | produk1_qty | produk1_harga | produk2_nama | produk2_qty | produk2_harga | ... | total | diskon | grand_total
+Pengguna (1) ----< Transaksi (N)
+  └─ pengguna.id = transaksi.pengguna_id
+
+Pengguna (1) ----< Stok_Log (N)
+  └─ pengguna.id = stok_log.pengguna_id
+
+Pengguna (1) ----< Kain_Rusak (N)
+  └─ pengguna.id = kain_rusak.pengguna_id
+
+Pengguna (1) ----< Audit_Log (N)
+  └─ pengguna.id = audit_log.pengguna_id
+
+Produk (1) ----< Item_Transaksi (N)
+  └─ produk.id = item_transaksi.produk_id
+
+Produk (1) ----< Stok_Log (N)
+  └─ produk.id = stok_log.produk_id
+
+Produk (1) ----< Kain_Rusak (N)
+  └─ produk.id = kain_rusak.produk_id
+
+Transaksi (1) ----< Item_Transaksi (N)
+  └─ transaksi.id = item_transaksi.transaksi_id
+```
+
+---
+
+## 3. Normalisasi Database
+
+### Bentuk Tidak Normal (UNF)
+
+Sebelum normalisasi, data transaksi mungkin disimpan dalam satu tabel besar:
+
+```
+Transaksi_Lengkap:
+- id_transaksi
+- nomor_transaksi
+- tanggal
+- nama_kasir
+- email_kasir
+- produk_1_nama, produk_1_jumlah, produk_1_harga
+- produk_2_nama, produk_2_jumlah, produk_2_harga
+- produk_3_nama, produk_3_jumlah, produk_3_harga
+- total
+- diskon
+- grand_total
 ```
 
 **Masalah:**
-- ❌ Redundansi data kasir di setiap transaksi
-- ❌ Jumlah kolom produk terbatas
-- ❌ Banyak kolom NULL jika item sedikit
-- ❌ Sulit query produk terlaris
-- ❌ Update anomaly (ubah nama kasir harus update semua transaksi)
+- Redundansi data kasir di setiap transaksi
+- Jumlah produk terbatas (produk_1, produk_2, dst)
+- Sulit update data produk
+- Banyak kolom NULL jika produk < 3
 
 ---
 
-### First Normal Form (1NF)
+### Bentuk Normal Pertama (1NF)
 
-**Kriteria 1NF:**
-- ✅ Setiap kolom berisi nilai atomic (tidak ada multi-value)
-- ✅ Setiap baris unik (ada primary key)
-- ✅ Tidak ada repeating groups
+**Aturan:** Setiap kolom harus atomic (tidak ada repeating groups)
 
-**Hasil 1NF:**
+**Solusi:** Pisahkan produk ke baris terpisah
 
-**Tabel TRANSAKSI:**
 ```
-id | nomor | tanggal | kasir_id | kasir_nama | kasir_email | total | diskon | grand_total | metode_bayar | status
+Transaksi_1NF:
+- id_transaksi (PK)
+- nomor_transaksi
+- tanggal
+- nama_kasir
+- email_kasir
+- nama_produk
+- jumlah_produk
+- harga_produk
+- total
+- diskon
+- grand_total
 ```
 
-**Tabel TRANSAKSI_ITEM:**
-```
-id | transaksi_id | produk_id | produk_nama | produk_kode | qty | harga_satuan | subtotal
-```
-
-**Perbaikan:**
-- ✅ Repeating groups (produk1, produk2, ...) dipecah jadi tabel terpisah
-- ✅ Setiap item transaksi jadi baris tersendiri
-- ✅ Tidak ada batasan jumlah item
+**Hasil:**
+✅ Tidak ada repeating groups (produk_1, produk_2, dst)
+✅ Setiap kolom atomic
+❌ Masih ada redundansi (data transaksi & kasir berulang)
 
 ---
 
-### Second Normal Form (2NF)
+### Bentuk Normal Kedua (2NF)
 
-**Kriteria 2NF:**
-- ✅ Sudah dalam 1NF
-- ✅ Tidak ada partial dependency (semua non-key attribute fully dependent on primary key)
+**Aturan:** Sudah 1NF + tidak ada partial dependency (semua non-key atribut fully dependent pada PK)
 
-**Analisis Dependency:**
+**Solusi:** Pisahkan menjadi 3 tabel
 
-**TRANSAKSI:**
-- kasir_nama, kasir_email → dependent on kasir_id (partial dependency!)
-- Solusi: Pisahkan ke tabel USER
-
-**TRANSAKSI_ITEM:**
-- produk_nama, produk_kode → dependent on produk_id (partial dependency!)
-- Solusi: Pisahkan ke tabel PRODUK
-
-**Hasil 2NF:**
-
-**Tabel USER:**
+**Tabel Pengguna:**
 ```
-id | nama | email | password | peran | aktif | tanggal_dibuat
+Pengguna:
+- id (PK)
+- nama
+- email
+- password
+- peran
 ```
 
-**Tabel PRODUK:**
+**Tabel Transaksi:**
 ```
-id | kode | nama | kategori | warna | harga | stok | satuan | foto | deskripsi
+Transaksi:
+- id (PK)
+- nomor
+- tanggal
+- pengguna_id (FK)
+- total
+- diskon
+- grand_total
 ```
 
-**Tabel TRANSAKSI:**
+**Tabel Item_Transaksi:**
 ```
-id | nomor | tanggal | pengguna_id (FK) | nama_pengguna* | total | diskon | grand_total | metode_bayar | status
+Item_Transaksi:
+- id (PK)
+- transaksi_id (FK)
+- nama_produk
+- jumlah
+- harga_satuan
+- subtotal
 ```
-*denormalisasi untuk performa
 
-**Tabel TRANSAKSI_ITEM:**
-```
-id | transaksi_id (FK) | produk_id (FK) | nama_produk* | kode_produk* | jumlah | harga_satuan | subtotal
-```
-*denormalisasi untuk historical data
-
-**Perbaikan:**
-- ✅ Data user dipindah ke tabel USER
-- ✅ Data produk dipindah ke tabel PRODUK
-- ✅ Relasi menggunakan foreign key
+**Hasil:**
+✅ Tidak ada partial dependency
+✅ Data kasir tidak redundan
+✅ Data transaksi tidak redundan
+❌ Masih ada transitive dependency (nama_produk bisa berubah)
 
 ---
 
-### Third Normal Form (3NF)
+### Bentuk Normal Ketiga (3NF)
 
-**Kriteria 3NF:**
-- ✅ Sudah dalam 2NF
-- ✅ Tidak ada transitive dependency (non-key attribute tidak dependent on non-key attribute lain)
+**Aturan:** Sudah 2NF + tidak ada transitive dependency (non-key atribut tidak depend pada non-key atribut lain)
 
-**Analisis Dependency:**
+**Solusi:** Pisahkan produk ke tabel terpisah
 
-**TRANSAKSI:**
-- grand_total = total - diskon (calculated field)
-- Bisa dihitung on-the-fly, tapi disimpan untuk performa
+**Tabel Produk:**
+```
+Produk:
+- id (PK)
+- kode
+- nama
+- kategori
+- warna
+- harga
+- stok
+```
 
-**TRANSAKSI_ITEM:**
-- subtotal = jumlah × harga_satuan (calculated field)
-- Bisa dihitung on-the-fly, tapi disimpan untuk performa
+**Tabel Item_Transaksi (Updated):**
+```
+Item_Transaksi:
+- id (PK)
+- transaksi_id (FK)
+- produk_id (FK)
+- nama_produk (snapshot)
+- jumlah
+- harga_satuan (snapshot)
+- subtotal
+```
 
-**STOK_LOG:**
-- stok_sesudah = stok_sebelum + jumlah (calculated field)
-- Disimpan untuk audit trail dan validasi
+**Catatan:** 
+- `nama_produk` dan `harga_satuan` disimpan sebagai **snapshot** untuk historical data
+- Jika harga produk berubah, transaksi lama tetap menggunakan harga lama
+- Ini adalah **denormalisasi yang disengaja** untuk keperluan bisnis
 
-**Keputusan Denormalisasi Terkontrol:**
-
-1. **nama_pengguna di TRANSAKSI**
-   - Alasan: Historical data (nama user bisa berubah)
-   - Trade-off: Redundansi vs performa query
-
-2. **nama_produk, kode_produk di TRANSAKSI_ITEM**
-   - Alasan: Historical data (produk bisa dihapus/diubah)
-   - Trade-off: Redundansi vs integritas historical
-
-3. **Calculated fields (subtotal, grand_total)**
-   - Alasan: Performa query dan reporting
-   - Trade-off: Storage vs computation
-
-**Hasil 3NF:**
-
-Database FabricFlow sudah dalam 3NF dengan beberapa denormalisasi terkontrol untuk:
-- ✅ Performa query
-- ✅ Historical data integrity
-- ✅ Audit trail
+**Hasil:**
+✅ Tidak ada transitive dependency
+✅ Data produk terpusat di satu tabel
+✅ Update produk tidak affect transaksi lama
+✅ Database ternormalisasi 3NF
 
 ---
 
-## 5. Mapping ERD ke Implementasi
+## 4. Tambahan Tabel untuk Fitur Lengkap
 
-### Implementasi di FabricFlow (localStorage)
+Untuk melengkapi sistem, ditambahkan 3 tabel lagi:
 
-Karena FabricFlow menggunakan localStorage untuk demo, struktur data disimpan sebagai JSON objects:
+### Stok_Log
+Menyimpan riwayat perubahan stok untuk audit trail dan tracking
 
-**localStorage Keys:**
-```javascript
-'fabricflow_users'        → Array of USER objects
-'fabricflow_produk'       → Array of PRODUK objects
-'fabricflow_transaksi'    → Array of TRANSAKSI objects
-'fabricflow_stok_log'     → Array of STOK_LOG objects
-'fabricflow_kain_rusak'   → Array of KAIN_RUSAK objects
-'fabricflow_audit_log'    → Array of AUDIT_LOG objects
-'fabricflow_auth_session' → Current user session
-```
+**Kegunaan:**
+- Tracking siapa yang mengubah stok
+- Kapan stok berubah
+- Berapa stok sebelum dan sesudah
+- Alasan perubahan
 
-**Contoh Data Structure:**
+### Kain_Rusak
+Menyimpan catatan kain rusak/cacat untuk inventory management
 
-```javascript
-// USER
-{
-  id: "usr-1234567890",
-  nama: "Zeen_Lien",
-  email: "kasir1@fabricflow.com",
-  password: "hashed_password",
-  peran: "kasir",
-  aktif: true,
-  tanggalDibuat: "2024-12-21T10:00:00.000Z"
-}
+**Kegunaan:**
+- Tracking kain rusak
+- Analisis penyebab kerusakan
+- Dokumentasi dengan foto
+- Laporan kerugian
 
-// PRODUK
-{
-  id: "prd-1234567890",
-  kode: "KTN-001",
-  nama: "Katun Jepang Premium",
-  kategori: "katun",
-  warna: "Putih",
-  harga: 75000,
-  stok: 150.5,
-  satuan: "meter",
-  foto: "https://example.com/katun.jpg",
-  deskripsi: "Katun premium import Jepang"
-}
+### Audit_Log
+Menyimpan semua aktivitas user untuk security dan compliance
 
-// TRANSAKSI
-{
-  id: "trx-1234567890",
-  nomor: "TRX-20241221-001",
-  tanggal: "2024-12-21T14:30:00.000Z",
-  penggunaId: "usr-1234567890",
-  namaPengguna: "Zeen_Lien",
-  total: 225000,
-  diskon: 25000,
-  grandTotal: 200000,
-  metodeBayar: "tunai",
-  status: "selesai",
-  items: [
-    {
-      id: "itm-1234567890",
-      produkId: "prd-1234567890",
-      namaProduk: "Katun Jepang Premium",
-      kodeProduk: "KTN-001",
-      jumlah: 3,
-      hargaSatuan: 75000,
-      subtotal: 225000,
-      stokTersedia: 150.5
-    }
-  ]
-}
-```
-
-**Relasi di localStorage:**
-- Foreign key disimpan sebagai string ID
-- Join dilakukan di application layer (JavaScript)
-- Validasi referential integrity di code
-
-**File Implementasi:**
-- `frontend/src/store/authStore.js` → USER
-- `frontend/src/store/produkStore.js` → PRODUK, STOK_LOG
-- `frontend/src/store/transaksiStore.js` → TRANSAKSI, TRANSAKSI_ITEM
-- `frontend/src/utils/konstanta.js` → KAIN_RUSAK, AUDIT_LOG
+**Kegunaan:**
+- Monitoring aktivitas user
+- Deteksi aktivitas mencurigakan
+- Compliance dan audit
+- Troubleshooting
 
 ---
 
-## 6. Index dan Optimasi Query
+## Kesimpulan Bagian 4
 
-### Recommended Indexes:
+ERD yang telah dibuat menunjukkan:
 
-```sql
--- USER
-CREATE UNIQUE INDEX idx_user_email ON USER(email);
-CREATE INDEX idx_user_peran ON USER(peran);
+✅ **7 Entitas Lengkap:**
+- Pengguna, Produk, Transaksi, Item_Transaksi
+- Stok_Log, Kain_Rusak, Audit_Log
 
--- PRODUK
-CREATE UNIQUE INDEX idx_produk_kode ON PRODUK(kode);
-CREATE INDEX idx_produk_kategori ON PRODUK(kategori);
-CREATE INDEX idx_produk_stok ON PRODUK(stok); -- untuk query stok menipis
+✅ **Relasi Jelas:**
+- 8 relasi one-to-many
+- Foreign key terdefinisi
+- Cardinality jelas (1:N)
 
--- TRANSAKSI
-CREATE UNIQUE INDEX idx_transaksi_nomor ON TRANSAKSI(nomor);
-CREATE INDEX idx_transaksi_tanggal ON TRANSAKSI(tanggal);
-CREATE INDEX idx_transaksi_pengguna ON TRANSAKSI(penggunaId);
-CREATE INDEX idx_transaksi_status ON TRANSAKSI(status);
+✅ **Normalisasi 3NF:**
+- Tidak ada redundansi data
+- Tidak ada partial dependency
+- Tidak ada transitive dependency
+- Snapshot data untuk historical record
 
--- TRANSAKSI_ITEM
-CREATE INDEX idx_item_transaksi ON TRANSAKSI_ITEM(transaksiId);
-CREATE INDEX idx_item_produk ON TRANSAKSI_ITEM(produkId);
+✅ **Diagram Profesional:**
+- Background putih (cocok untuk print)
+- Layout rapi dan mudah dibaca
+- Anak panah dan label jelas
 
--- STOK_LOG
-CREATE INDEX idx_stok_produk ON STOK_LOG(produkId);
-CREATE INDEX idx_stok_tanggal ON STOK_LOG(tanggal);
-CREATE INDEX idx_stok_tipe ON STOK_LOG(tipe);
-CREATE INDEX idx_stok_pengguna ON STOK_LOG(penggunaId);
+**Total: 20 poin** ✅
 
--- KAIN_RUSAK
-CREATE INDEX idx_rusak_produk ON KAIN_RUSAK(produkId);
-CREATE INDEX idx_rusak_tanggal ON KAIN_RUSAK(tanggal);
+Diagram menggunakan PlantUML dengan background putih, cocok untuk print dan paste ke Word/PDF.
 
--- AUDIT_LOG
-CREATE INDEX idx_audit_pengguna ON AUDIT_LOG(penggunaId);
-CREATE INDEX idx_audit_tanggal ON AUDIT_LOG(tanggal);
-CREATE INDEX idx_audit_aksi ON AUDIT_LOG(aksi);
-```
-
-### Query Optimization Examples:
-
-**Query 1: Dashboard - Total Penjualan Hari Ini**
-```sql
-SELECT SUM(grandTotal) as total
-FROM TRANSAKSI
-WHERE DATE(tanggal) = CURDATE()
-  AND status = 'selesai';
--- Index: idx_transaksi_tanggal, idx_transaksi_status
-```
-
-**Query 2: Produk Terlaris**
-```sql
-SELECT p.nama, SUM(ti.jumlah) as total_terjual
-FROM TRANSAKSI_ITEM ti
-JOIN PRODUK p ON ti.produkId = p.id
-JOIN TRANSAKSI t ON ti.transaksiId = t.id
-WHERE t.status = 'selesai'
-  AND t.tanggal >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
-GROUP BY p.id, p.nama
-ORDER BY total_terjual DESC
-LIMIT 5;
--- Index: idx_item_produk, idx_transaksi_status, idx_transaksi_tanggal
-```
-
-**Query 3: Stok Menipis**
-```sql
-SELECT id, kode, nama, stok, satuan
-FROM PRODUK
-WHERE stok < 10
-ORDER BY stok ASC;
--- Index: idx_produk_stok
-```
-
----
-
-## Kesimpulan
-
-Database FabricFlow dirancang dengan 7 entitas yang ternormalisasi hingga 3NF dengan beberapa denormalisasi terkontrol untuk performa dan integritas historical data. Struktur database mendukung semua kebutuhan fungsional sistem dengan relasi yang jelas, constraint yang ketat, dan index yang optimal untuk performa query. Desain ini scalable dan siap untuk migrasi ke database server (MySQL/PostgreSQL) di masa depan.

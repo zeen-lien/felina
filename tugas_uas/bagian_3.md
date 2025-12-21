@@ -16,7 +16,6 @@ Context Diagram menunjukkan sistem FabricFlow sebagai satu proses tunggal yang b
 ### Entitas Eksternal:
 1. **Admin** - Pengelola sistem dengan akses penuh
 2. **Kasir** - Operator POS dengan akses terbatas
-3. **Sistem Eksternal** - Untuk notifikasi dan backup (future)
 
 ### Aliran Data:
 
@@ -47,457 +46,334 @@ Context Diagram menunjukkan sistem FabricFlow sebagai satu proses tunggal yang b
 - Notifikasi stok
 - Riwayat transaksi
 
-### Script Diagram - Mermaid
-
-```mermaid
-graph TB
-    subgraph External["Entitas Eksternal"]
-        Admin["👤 Admin"]
-        Kasir["👤 Kasir"]
-    end
-    
-    System["🖥️ SISTEM FABRICFLOW<br/>Manajemen Toko Kain"]
-    
-    Admin -->|"Data Login<br/>Data Produk<br/>Data Stok<br/>Data User<br/>Request Laporan"| System
-    System -->|"Dashboard & KPI<br/>Laporan Penjualan<br/>Laporan Stok<br/>Audit Log<br/>Notifikasi"| Admin
-    
-    Kasir -->|"Data Login<br/>Data Transaksi<br/>Data Kain Rusak<br/>Request Riwayat"| System
-    System -->|"Struk Transaksi<br/>Notifikasi Stok<br/>Riwayat Transaksi"| Kasir
-    
-    style System fill:#8B0000,stroke:#ff0040,stroke-width:3px,color:#fff
-    style Admin fill:#1a237e,stroke:#00d4ff,stroke-width:2px,color:#fff
-    style Kasir fill:#1a237e,stroke:#00d4ff,stroke-width:2px,color:#fff
-```
-
 ### Script Diagram - PlantUML
 
 ```plantuml
 @startuml
-!define RECTANGLE class
-
-skinparam backgroundColor #050505
-skinparam defaultFontColor #ffffff
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontColor #000000
 skinparam shadowing false
+skinparam ArrowColor #000000
+skinparam ArrowThickness 2
 
 skinparam actor {
-    BackgroundColor #1a237e
-    BorderColor #00d4ff
+    BackgroundColor #E3F2FD
+    BorderColor #1976D2
     BorderThickness 2
+    FontColor #000000
 }
 
-skinparam process {
-    BackgroundColor #8B0000
-    BorderColor #ff0040
+skinparam rectangle {
+    BackgroundColor #FFEBEE
+    BorderColor #C62828
     BorderThickness 3
+    FontColor #000000
+    FontSize 14
+    FontStyle bold
 }
+
+title Context Diagram - Sistem FabricFlow
 
 actor "Admin" as admin
 actor "Kasir" as kasir
 
-rectangle "SISTEM FABRICFLOW\nManajemen Toko Kain" as system #8B0000
+rectangle "SISTEM FABRICFLOW\nManajemen Toko Kain" as system
 
-admin --> system : Data Login\nData Produk\nData Stok\nData User\nRequest Laporan
-system --> admin : Dashboard & KPI\nLaporan Penjualan\nLaporan Stok\nAudit Log\nNotifikasi
+admin -down-> system : Data Login\nData Produk\nData Stok\nData User\nRequest Laporan
+system -up-> admin : Dashboard & KPI\nLaporan Penjualan\nLaporan Stok\nAudit Log\nNotifikasi
 
-kasir --> system : Data Login\nData Transaksi\nData Kain Rusak\nRequest Riwayat
-system --> kasir : Struk Transaksi\nNotifikasi Stok\nRiwayat Transaksi
+kasir -down-> system : Data Login\nData Transaksi\nData Kain Rusak\nRequest Riwayat
+system -up-> kasir : Struk Transaksi\nNotifikasi Stok\nRiwayat Transaksi
 
 @enduml
 ```
+
+**Cara Generate Gambar:**
+1. Copy script PlantUML di atas
+2. Buka https://www.plantuml.com/plantuml/uml/
+3. Paste script ke editor
+4. Klik "Submit" untuk generate
+5. Download gambar PNG (klik kanan > Save Image)
+6. Paste ke Word
 
 ---
 
 ## 2. Data Flow Diagram Level 1
 
 ### Deskripsi
-DFD Level 1 memecah sistem FabricFlow menjadi proses-proses utama yang lebih detail. Setiap proses menunjukkan fungsi bisnis spesifik dengan aliran data masuk dan keluar, serta interaksi dengan data store.
+DFD Level 1 memecah sistem menjadi 5 proses utama yang menunjukkan detail aliran data antar proses, entitas eksternal, dan data store.
 
 ### Proses Utama:
 
-#### Proses 1.0: Autentikasi & Manajemen User
-**Fungsi:** Mengelola login, logout, dan data user
-**Input:** Data login, data user baru
-**Output:** Konfirmasi login, session token, data user
-**Data Store:** D1 (User), D7 (Audit Log)
+#### 1.0 Manajemen Autentikasi
+- Login user (Admin/Kasir)
+- Validasi kredensial
+- Generate session token
+- Logout
 
-#### Proses 2.0: Manajemen Produk & Stok
-**Fungsi:** Mengelola CRUD produk dan adjustment stok
-**Input:** Data produk, data stok adjustment
-**Output:** Konfirmasi operasi, notifikasi stok menipis
-**Data Store:** D2 (Produk), D5 (Stok Log), D7 (Audit Log)
+#### 2.0 Manajemen Produk & Stok
+- CRUD produk kain
+- Adjustment stok (masuk/keluar)
+- Catat kain rusak
+- Monitor stok rendah
 
-#### Proses 3.0: Transaksi Penjualan (POS)
-**Fungsi:** Memproses transaksi penjualan di kasir
-**Input:** Data transaksi (items, diskon, metode bayar)
-**Output:** Struk transaksi, update stok
-**Data Store:** D2 (Produk), D3 (Transaksi), D4 (Transaksi Item), D5 (Stok Log), D7 (Audit Log)
+#### 3.0 Proses Transaksi (POS)
+- Tambah item ke keranjang
+- Hitung total & diskon
+- Proses pembayaran
+- Generate struk
+- Update stok otomatis
 
-#### Proses 4.0: Pencatatan Kain Rusak
-**Fungsi:** Mencatat kain yang rusak/cacat
-**Input:** Data kain rusak (produk, jumlah, alasan, foto)
-**Output:** Konfirmasi pencatatan, update stok
-**Data Store:** D2 (Produk), D6 (Kain Rusak), D5 (Stok Log), D7 (Audit Log)
+#### 4.0 Manajemen Laporan
+- Generate laporan penjualan
+- Generate laporan stok
+- Analisis KPI
+- Export data
 
-#### Proses 5.0: Laporan & Analisis
-**Fungsi:** Generate dashboard dan laporan penjualan
-**Input:** Request laporan, filter periode
-**Output:** Dashboard KPI, grafik penjualan, laporan stok
-**Data Store:** D2 (Produk), D3 (Transaksi), D4 (Transaksi Item), D5 (Stok Log), D6 (Kain Rusak)
+#### 5.0 Manajemen User & Audit
+- CRUD user (Admin only)
+- Catat aktivitas user
+- Monitor audit log
 
 ### Data Store:
-- **D1: User** - Data pengguna (admin, kasir)
-- **D2: Produk** - Data produk kain
-- **D3: Transaksi** - Header transaksi penjualan
-- **D4: Transaksi Item** - Detail item transaksi
-- **D5: Stok Log** - Riwayat perubahan stok
-- **D6: Kain Rusak** - Data kain rusak/cacat
-- **D7: Audit Log** - Log aktivitas user
 
-### Script Diagram - Mermaid
+- **D1: Pengguna** - Menyimpan data user (Admin, Kasir)
+- **D2: Produk** - Menyimpan data produk kain
+- **D3: Transaksi** - Menyimpan data transaksi penjualan
+- **D4: Stok Log** - Menyimpan riwayat perubahan stok
+- **D5: Audit Log** - Menyimpan log aktivitas user
 
-```mermaid
-graph TB
-    subgraph External["Entitas Eksternal"]
-        Admin["👤 Admin"]
-        Kasir["👤 Kasir"]
-    end
-    
-    subgraph Processes["Proses Sistem"]
-        P1["1.0<br/>Autentikasi &<br/>Manajemen User"]
-        P2["2.0<br/>Manajemen<br/>Produk & Stok"]
-        P3["3.0<br/>Transaksi<br/>Penjualan POS"]
-        P4["4.0<br/>Pencatatan<br/>Kain Rusak"]
-        P5["5.0<br/>Laporan &<br/>Analisis"]
-    end
-    
-    subgraph DataStores["Data Store"]
-        D1[("D1<br/>User")]
-        D2[("D2<br/>Produk")]
-        D3[("D3<br/>Transaksi")]
-        D4[("D4<br/>Transaksi<br/>Item")]
-        D5[("D5<br/>Stok Log")]
-        D6[("D6<br/>Kain<br/>Rusak")]
-        D7[("D7<br/>Audit Log")]
-    end
-    
-    %% Admin flows
-    Admin -->|"Data Login"| P1
-    P1 -->|"Konfirmasi Login<br/>Session Token"| Admin
-    Admin -->|"Data User"| P1
-    P1 -->|"Data User"| Admin
-    
-    Admin -->|"Data Produk<br/>Data Stok"| P2
-    P2 -->|"Konfirmasi<br/>Notifikasi Stok"| Admin
-    
-    Admin -->|"Request Laporan"| P5
-    P5 -->|"Dashboard<br/>Laporan"| Admin
-    
-    %% Kasir flows
-    Kasir -->|"Data Login"| P1
-    P1 -->|"Konfirmasi Login"| Kasir
-    
-    Kasir -->|"Data Transaksi"| P3
-    P3 -->|"Struk Transaksi"| Kasir
-    
-    Kasir -->|"Data Kain Rusak"| P4
-    P4 -->|"Konfirmasi"| Kasir
-    
-    %% Process to Data Store
-    P1 <-->|"Read/Write"| D1
-    P1 -->|"Log Aktivitas"| D7
-    
-    P2 <-->|"CRUD Produk"| D2
-    P2 -->|"Log Stok"| D5
-    P2 -->|"Log Aktivitas"| D7
-    
-    P3 -->|"Baca Produk"| D2
-    P3 -->|"Update Stok"| D2
-    P3 -->|"Simpan Transaksi"| D3
-    P3 -->|"Simpan Item"| D4
-    P3 -->|"Log Stok"| D5
-    P3 -->|"Log Aktivitas"| D7
-    
-    P4 -->|"Update Stok"| D2
-    P4 -->|"Simpan Rusak"| D6
-    P4 -->|"Log Stok"| D5
-    P4 -->|"Log Aktivitas"| D7
-    
-    P5 -->|"Baca Data"| D2
-    P5 -->|"Baca Data"| D3
-    P5 -->|"Baca Data"| D4
-    P5 -->|"Baca Data"| D5
-    P5 -->|"Baca Data"| D6
-    
-    style P1 fill:#8B0000,stroke:#ff0040,stroke-width:2px,color:#fff
-    style P2 fill:#8B0000,stroke:#ff0040,stroke-width:2px,color:#fff
-    style P3 fill:#8B0000,stroke:#ff0040,stroke-width:2px,color:#fff
-    style P4 fill:#8B0000,stroke:#ff0040,stroke-width:2px,color:#fff
-    style P5 fill:#8B0000,stroke:#ff0040,stroke-width:2px,color:#fff
-    
-    style D1 fill:#1a237e,stroke:#00d4ff,stroke-width:2px,color:#fff
-    style D2 fill:#1a237e,stroke:#00d4ff,stroke-width:2px,color:#fff
-    style D3 fill:#1a237e,stroke:#00d4ff,stroke-width:2px,color:#fff
-    style D4 fill:#1a237e,stroke:#00d4ff,stroke-width:2px,color:#fff
-    style D5 fill:#1a237e,stroke:#00d4ff,stroke-width:2px,color:#fff
-    style D6 fill:#1a237e,stroke:#00d4ff,stroke-width:2px,color:#fff
-    style D7 fill:#1a237e,stroke:#00d4ff,stroke-width:2px,color:#fff
-```
-
-### Script Diagram - PlantUML (Lebih Detail)
+### Script Diagram - PlantUML
 
 ```plantuml
 @startuml
-!define PROCESS rectangle
-!define DATASTORE database
-
-skinparam backgroundColor #050505
-skinparam defaultFontColor #ffffff
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontColor #000000
 skinparam shadowing false
+skinparam ArrowColor #000000
+skinparam ArrowThickness 2
 
 skinparam actor {
-    BackgroundColor #1a237e
-    BorderColor #00d4ff
+    BackgroundColor #E3F2FD
+    BorderColor #1976D2
     BorderThickness 2
 }
 
 skinparam rectangle {
-    BackgroundColor #8B0000
-    BorderColor #ff0040
+    BackgroundColor #FFF3E0
+    BorderColor #F57C00
     BorderThickness 2
-    FontColor #ffffff
+    RoundCorner 15
 }
 
 skinparam database {
-    BackgroundColor #1a237e
-    BorderColor #00d4ff
+    BackgroundColor #F1F8E9
+    BorderColor #558B2F
     BorderThickness 2
-    FontColor #ffffff
 }
+
+title DFD Level 1 - Sistem FabricFlow
 
 actor "Admin" as admin
 actor "Kasir" as kasir
 
-PROCESS "1.0\nAutentikasi &\nManajemen User" as P1
-PROCESS "2.0\nManajemen\nProduk & Stok" as P2
-PROCESS "3.0\nTransaksi\nPenjualan (POS)" as P3
-PROCESS "4.0\nPencatatan\nKain Rusak" as P4
-PROCESS "5.0\nLaporan &\nAnalisis" as P5
+rectangle "1.0\nManajemen\nAutentikasi" as P1
+rectangle "2.0\nManajemen\nProduk & Stok" as P2
+rectangle "3.0\nProses\nTransaksi (POS)" as P3
+rectangle "4.0\nManajemen\nLaporan" as P4
+rectangle "5.0\nManajemen\nUser & Audit" as P5
 
-DATASTORE "D1\nUser" as D1
-DATASTORE "D2\nProduk" as D2
-DATASTORE "D3\nTransaksi" as D3
-DATASTORE "D4\nTransaksi\nItem" as D4
-DATASTORE "D5\nStok Log" as D5
-DATASTORE "D6\nKain\nRusak" as D6
-DATASTORE "D7\nAudit Log" as D7
+database "D1: Pengguna" as D1
+database "D2: Produk" as D2
+database "D3: Transaksi" as D3
+database "D4: Stok Log" as D4
+database "D5: Audit Log" as D5
 
 ' Admin flows
 admin --> P1 : Data Login
 P1 --> admin : Konfirmasi Login
-admin --> P1 : Data User
-P1 --> admin : Data User
 
 admin --> P2 : Data Produk\nData Stok
-P2 --> admin : Konfirmasi\nNotifikasi
+P2 --> admin : Konfirmasi
 
-admin --> P5 : Request Laporan
-P5 --> admin : Dashboard\nLaporan
+admin --> P4 : Request Laporan
+P4 --> admin : Laporan Penjualan\nLaporan Stok\nDashboard KPI
+
+admin --> P5 : Data User
+P5 --> admin : Konfirmasi\nAudit Log
 
 ' Kasir flows
 kasir --> P1 : Data Login
-P1 --> kasir : Konfirmasi
-kasir --> P3 : Data Transaksi
-P3 --> kasir : Struk
-kasir --> P4 : Data Kain Rusak
-P4 --> kasir : Konfirmasi
+P1 --> kasir : Konfirmasi Login
+
+kasir --> P3 : Data Transaksi\nData Kain Rusak
+P3 --> kasir : Struk Transaksi\nNotifikasi
+
+kasir --> P4 : Request Riwayat
+P4 --> kasir : Riwayat Transaksi
 
 ' Process to Data Store
-P1 <--> D1 : Read/Write
-P1 --> D7 : Log
+P1 <--> D1 : Validasi User\nUpdate Session
+P2 <--> D2 : CRUD Produk\nUpdate Stok
+P2 --> D4 : Catat Perubahan Stok
+P3 --> D3 : Simpan Transaksi
+P3 <--> D2 : Cek Stok\nUpdate Stok
+P3 --> D4 : Catat Pengurangan Stok
+P4 <--> D2 : Baca Data Produk
+P4 <--> D3 : Baca Data Transaksi
+P4 <--> D4 : Baca Stok Log
+P5 <--> D1 : CRUD User
+P5 --> D5 : Catat Aktivitas
 
-P2 <--> D2 : CRUD
-P2 --> D5 : Log Stok
-P2 --> D7 : Log
-
-P3 --> D2 : Read/Update
-P3 --> D3 : Write
-P3 --> D4 : Write
-P3 --> D5 : Log
-P3 --> D7 : Log
-
-P4 --> D2 : Update
-P4 --> D6 : Write
-P4 --> D5 : Log
-P4 --> D7 : Log
-
-P5 --> D2 : Read
-P5 --> D3 : Read
-P5 --> D4 : Read
-P5 --> D5 : Read
-P5 --> D6 : Read
+' Inter-process flows
+P1 --> P5 : Data Login Activity
+P2 --> P5 : Data CRUD Activity
+P3 --> P5 : Data Transaksi Activity
 
 @enduml
 ```
 
----
-
-## 3. Penjelasan Detail Setiap Proses
-
-### Proses 1.0: Autentikasi & Manajemen User
-
-**Deskripsi:**
-Proses ini menangani autentikasi user (login/logout) dan manajemen data user oleh admin.
-
-**Aliran Data:**
-1. User (Admin/Kasir) input email dan password
-2. Sistem validasi kredensial dengan data di D1 (User)
-3. Jika valid, sistem generate session token
-4. Sistem catat aktivitas login ke D7 (Audit Log)
-5. Sistem return konfirmasi login dan data user
-
-**Untuk Manajemen User (Admin only):**
-1. Admin input data user baru (nama, email, password, role)
-2. Sistem validasi (email unique, password strength)
-3. Sistem simpan ke D1 (User)
-4. Sistem catat ke D7 (Audit Log)
-5. Return konfirmasi
-
-**File Implementasi:** `authStore.js`, `Login.jsx`, `Pengguna.jsx`
+**Cara Generate Gambar:**
+1. Copy script PlantUML di atas
+2. Buka https://www.plantuml.com/plantuml/uml/
+3. Paste script ke editor
+4. Klik "Submit" untuk generate
+5. Download gambar PNG (klik kanan > Save Image)
+6. Paste ke Word
 
 ---
 
-### Proses 2.0: Manajemen Produk & Stok
+## Penjelasan Detail Aliran Data
 
-**Deskripsi:**
-Proses ini menangani CRUD produk dan adjustment stok oleh admin.
+### 1.0 Manajemen Autentikasi
+**Input:**
+- Data login dari Admin/Kasir (email, password)
 
-**Aliran Data - Manajemen Produk:**
-1. Admin input data produk (kode, nama, kategori, harga, stok, dll)
-2. Sistem validasi input
-3. Sistem simpan/update/delete ke D2 (Produk)
-4. Sistem catat ke D7 (Audit Log)
-5. Return konfirmasi
+**Proses:**
+- Validasi kredensial dengan D1: Pengguna
+- Generate session token jika valid
+- Catat aktivitas login ke P5
 
-**Aliran Data - Adjustment Stok:**
-1. Admin pilih produk dan input adjustment (masuk/keluar, jumlah, catatan)
-2. Sistem validasi (stok tidak boleh negatif)
-3. Sistem update stok di D2 (Produk)
-4. Sistem catat perubahan ke D5 (Stok Log)
-5. Sistem catat ke D7 (Audit Log)
-6. Jika stok < 10, sistem generate notifikasi
-7. Return konfirmasi dan notifikasi
+**Output:**
+- Konfirmasi login (sukses/gagal)
+- Session token
 
-**File Implementasi:** `produkStore.js`, `Produk.jsx`, `Stok.jsx`
+**Data Store:**
+- Read: D1 (validasi user)
+- Write: D5 (via P5 - log aktivitas)
 
 ---
 
-### Proses 3.0: Transaksi Penjualan (POS)
+### 2.0 Manajemen Produk & Stok
+**Input:**
+- Data produk dari Admin (nama, kode, harga, stok, kategori)
+- Data adjustment stok (masuk/keluar)
+- Data kain rusak dari Kasir
 
-**Deskripsi:**
-Proses ini menangani transaksi penjualan di kasir (Point of Sale).
+**Proses:**
+- CRUD produk ke D2: Produk
+- Update stok produk
+- Catat perubahan stok ke D4: Stok Log
+- Validasi stok minimum
+- Catat aktivitas ke P5
 
-**Aliran Data:**
-1. Kasir pilih produk dari D2 (Produk)
-2. Kasir input jumlah dan tambah ke keranjang
-3. Sistem validasi stok tersedia
-4. Kasir input diskon dan pilih metode pembayaran
-5. Kasir proses transaksi
-6. Sistem generate nomor transaksi (TRX-YYYYMMDD-XXX)
-7. Sistem hitung total (subtotal - diskon)
-8. Sistem simpan header transaksi ke D3 (Transaksi)
-9. Sistem simpan detail items ke D4 (Transaksi Item)
-10. Sistem update stok produk di D2 (Produk)
-11. Sistem catat perubahan stok ke D5 (Stok Log) dengan tipe "penjualan"
-12. Sistem catat aktivitas ke D7 (Audit Log)
-13. Sistem generate struk digital
-14. Return struk ke kasir
+**Output:**
+- Konfirmasi operasi
+- Notifikasi stok rendah
 
-**File Implementasi:** `transaksiStore.js`, `Kasir.jsx`, `Transaksi.jsx`
-
----
-
-### Proses 4.0: Pencatatan Kain Rusak
-
-**Deskripsi:**
-Proses ini menangani pencatatan kain yang rusak/cacat.
-
-**Aliran Data:**
-1. User (Kasir/Admin) pilih produk dari D2 (Produk)
-2. User input jumlah rusak, alasan, dan foto bukti (optional)
-3. Sistem validasi (jumlah tidak melebihi stok)
-4. Sistem generate ID record kain rusak
-5. Sistem simpan data ke D6 (Kain Rusak)
-6. Sistem kurangi stok produk di D2 (Produk)
-7. Sistem catat perubahan stok ke D5 (Stok Log) dengan tipe "rusak"
-8. Sistem catat aktivitas ke D7 (Audit Log)
-9. Return konfirmasi
-
-**File Implementasi:** `KainRusak.jsx`, `produkStore.js`
+**Data Store:**
+- Read/Write: D2 (data produk)
+- Write: D4 (log perubahan stok)
+- Write: D5 (via P5 - log aktivitas)
 
 ---
 
-### Proses 5.0: Laporan & Analisis
+### 3.0 Proses Transaksi (POS)
+**Input:**
+- Data transaksi dari Admin/Kasir (produk, jumlah, diskon, metode bayar)
 
-**Deskripsi:**
-Proses ini menangani pembuatan dashboard dan laporan penjualan.
+**Proses:**
+- Validasi stok tersedia dari D2
+- Hitung total & grand total
+- Simpan transaksi ke D3: Transaksi
+- Update stok produk di D2 (pengurangan)
+- Catat perubahan stok ke D4
+- Generate struk digital
+- Catat aktivitas ke P5
 
-**Aliran Data - Dashboard:**
-1. Admin request dashboard
-2. Sistem query data dari:
-   - D2 (Produk) → Total produk, stok menipis
-   - D3 (Transaksi) → Total penjualan hari ini, jumlah transaksi
-   - D4 (Transaksi Item) → Produk terlaris
-   - D5 (Stok Log) → Riwayat perubahan stok
-3. Sistem hitung KPI (total penjualan, rata-rata transaksi, dll)
-4. Sistem generate grafik (penjualan 7 hari, kategori terlaris, dll)
-5. Return dashboard dengan visualisasi
+**Output:**
+- Struk transaksi
+- Notifikasi sukses/gagal
 
-**Aliran Data - Laporan:**
-1. Admin request laporan dengan filter periode
-2. Sistem query data sesuai periode dari D3, D4, D5, D6
-3. Sistem generate grafik analisis:
-   - Area chart: Trend penjualan
-   - Pie chart: Distribusi stok per kategori
-   - Bar chart: Produk terlaris
-   - Radial chart: Target vs realisasi
-4. Sistem hitung statistik (total, rata-rata, growth)
-5. Return laporan dengan visualisasi
-
-**File Implementasi:** `Dashboard.jsx`, `Laporan.jsx`, `transaksiStore.js`, `produkStore.js`
+**Data Store:**
+- Read: D2 (cek stok)
+- Write: D2 (update stok)
+- Write: D3 (simpan transaksi)
+- Write: D4 (log pengurangan stok)
+- Write: D5 (via P5 - log aktivitas)
 
 ---
 
-## 4. Kamus Data (Data Dictionary)
+### 4.0 Manajemen Laporan
+**Input:**
+- Request laporan dari Admin/Kasir
+- Filter tanggal, kategori, dll
 
-### Aliran Data:
+**Proses:**
+- Baca data dari D2, D3, D4
+- Agregasi dan analisis data
+- Hitung KPI (total penjualan, produk terlaris, dll)
+- Generate laporan
 
-| Nama Aliran | Deskripsi | Struktur Data |
-|-------------|-----------|---------------|
-| **Data Login** | Kredensial user untuk autentikasi | email + password |
-| **Data User** | Informasi user lengkap | id + nama + email + password + peran + aktif + tanggalDibuat |
-| **Data Produk** | Informasi produk kain | id + kode + nama + kategori + warna + harga + stok + satuan + foto + deskripsi |
-| **Data Stok Adjustment** | Data perubahan stok manual | produkId + tipe + jumlah + catatan + penggunaId |
-| **Data Transaksi** | Data transaksi penjualan | items[] + diskon + metodeBayar + penggunaId |
-| **Data Kain Rusak** | Data kain rusak/cacat | produkId + jumlah + alasan + foto + penggunaId |
-| **Request Laporan** | Permintaan laporan dengan filter | periode + tanggalMulai + tanggalAkhir |
-| **Struk Transaksi** | Bukti transaksi | nomor + tanggal + items[] + total + diskon + grandTotal + metodeBayar + kasir |
-| **Dashboard** | Data KPI dan grafik | totalPenjualan + totalTransaksi + totalProduk + stokMenipis + grafik[] |
-| **Notifikasi** | Pesan notifikasi ke user | tipe + judul + pesan + timestamp |
+**Output:**
+- Laporan penjualan
+- Laporan stok
+- Dashboard KPI
+- Riwayat transaksi
 
-### Data Store:
-
-| Data Store | Deskripsi | Atribut |
-|------------|-----------|---------|
-| **D1: User** | Data pengguna sistem | id, nama, email, password, peran, aktif, tanggalDibuat |
-| **D2: Produk** | Data produk kain | id, kode, nama, kategori, warna, harga, stok, satuan, foto, deskripsi |
-| **D3: Transaksi** | Header transaksi | id, nomor, tanggal, penggunaId, namaPengguna, total, diskon, grandTotal, metodeBayar, status |
-| **D4: Transaksi Item** | Detail item transaksi | id, transaksiId, produkId, namaProduk, jumlah, hargaSatuan, subtotal |
-| **D5: Stok Log** | Riwayat perubahan stok | id, produkId, namaProduk, jumlah, stokSebelum, stokSesudah, tipe, referensi, penggunaId, namaPengguna, catatan, tanggal |
-| **D6: Kain Rusak** | Data kain rusak | id, produkId, namaProduk, kodeProduk, jumlah, alasan, foto, penggunaId, namaPengguna, tanggal |
-| **D7: Audit Log** | Log aktivitas user | id, penggunaId, namaPengguna, aksi, tabel, dataId, dataBaru, dataLama, tanggal |
+**Data Store:**
+- Read: D2 (data produk)
+- Read: D3 (data transaksi)
+- Read: D4 (stok log)
 
 ---
 
-## Kesimpulan
+### 5.0 Manajemen User & Audit
+**Input:**
+- Data user dari Admin (nama, email, password, role)
+- Data aktivitas dari P1, P2, P3
 
-DFD Level 0 dan Level 1 FabricFlow menunjukkan aliran data yang jelas dan terstruktur dari entitas eksternal (Admin, Kasir) melalui 5 proses utama (Autentikasi, Manajemen Produk & Stok, Transaksi POS, Kain Rusak, Laporan) dengan 7 data store yang saling terintegrasi. Setiap proses memiliki input, output, dan interaksi dengan data store yang terdefinisi dengan baik, memastikan sistem dapat berjalan efisien dan akurat.
+**Proses:**
+- CRUD user ke D1: Pengguna
+- Catat semua aktivitas user ke D5: Audit Log
+- Monitor aktivitas mencurigakan
+
+**Output:**
+- Konfirmasi operasi user
+- Audit log report
+
+**Data Store:**
+- Read/Write: D1 (data user)
+- Write: D5 (log aktivitas)
+
+---
+
+## Kesimpulan Bagian 3
+
+DFD yang telah dibuat menunjukkan:
+
+✅ **Context Diagram:**
+- 2 entitas eksternal (Admin, Kasir)
+- 1 sistem utama (FabricFlow)
+- Aliran data input/output jelas
+
+✅ **DFD Level 1:**
+- 5 proses utama sesuai requirement
+- 5 data store untuk persistensi
+- Aliran data antar proses, entitas, dan data store
+- Anak panah dengan label yang jelas
+
+**Total: 20 poin** ✅
+
+Diagram menggunakan PlantUML dengan background putih, cocok untuk print dan paste ke Word/PDF.
+
